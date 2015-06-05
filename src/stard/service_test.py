@@ -2,18 +2,23 @@ import unittest
 import os
 import inspect
 
-os.environ['XDG_CONFIG_HOME'] = os.path.join(os.getcwd(),
-                                             'test_samples/config_home')
-import service
-from test_samples.config_home.stard import empty
+from service import Manager
+from test_samples import empty
 
-class TestLoadingServices(unittest.TestCase):
+class TestManager(unittest.TestCase):
     def assertSameClass(self, a, b):
         self.assertEqual(inspect.getsource(a), inspect.getsource(b))
 
-    def test_load_empty_service(self):
-        sample = service.service('empty')
+    def test_load_empty_service_from_given_config_dir(self):
+        manager = Manager(config_dirs=['test_samples'])
+        sample = manager.service('empty')
         self.assertSameClass(sample.__class__, empty.Service)
+
+    def test_load_service_twice_gives_same_object(self):
+        manager = Manager(config_dirs=['test_samples'])
+        sample1 = manager.service('empty')
+        sample2 = manager.service('empty')
+        self.assertIs(sample1, sample2)
 
 
 if __name__ == '__main__':
