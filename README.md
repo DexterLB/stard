@@ -4,6 +4,8 @@ Service files are python classes.
 
 Sample service:
 ```python
+# /etc/stard/ftpd.py
+
 from stard.service import BaseService
 
 class Service(BaseService):
@@ -19,6 +21,8 @@ class Service(BaseService):
 
 A not so traditional service:
 ```python
+# /etc/stard/brightness.py
+
 from stard.service import BaseService
 from shutil import copyfile
 
@@ -39,10 +43,36 @@ class Service(BaseService):
         copyfile(self._brightness_file, '/run/brightness')
 ```
 
+A service with arguments:
+```python
+# /etc/stard/dhcpcd.py
+
+from stard.service import BaseService
+
+class Service(BaseService):
+    description = 'DHCP daemon'
+
+    def init_service(self, interface):
+        self.exec_start = ('dhcpcd', '-q', '-w', interface)
+        self.exec_stop = ('dhcpcd', '-x', interface)
+
+# /etc/stard/network.py
+
+from stard.service import BaseService
+
+class Service(BaseService):
+    description = 'network node'
+    
+    parents = {
+        self.service('dhcpcd', interface='eth0')
+    }
+```
+
 services will have:
 
 - is_running()
 - start()
 - stop()
 - executable - used by default start() and stop() (like systemd's Simple type)
-- before, after: arrays of other services
+- parents, children - sets of services that define the order of execution
+- user, group
