@@ -2,6 +2,7 @@ from importlib.machinery import SourceFileLoader
 import xdg.BaseDirectory
 import os
 
+
 class Manager:
     def __init__(self, config_dirs=[]):
         config_base_dirs = xdg.BaseDirectory.xdg_config_dirs + ['/etc']
@@ -64,8 +65,8 @@ class BaseService:
 
     def __eq__(self, other):
         return (
-            (self.service_name, self.service_args, self.service_kwargs)
-            == (other.service_name, other.service_args, other.service_kwargs)
+            (self.service_name, self.service_args, self.service_kwargs) ==
+            (other.service_name, other.service_args, other.service_kwargs)
         )
 
     def service(self, name, *args, **kwargs):
