@@ -24,7 +24,6 @@ from shutil import copyfile
 
 class Service(BaseService):
     description = 'Save brightness'
-    user = 'human'
 
     _brightness_file = '/sys/class/backlight/intel_backlight/brightness'
 
