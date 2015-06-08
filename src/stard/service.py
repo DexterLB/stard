@@ -38,10 +38,11 @@ class Manager:
         return self.services[hash]
 
     def populate_relatives(self):
-        for service in self.services:
+        for _, service in self.services.items():
             for child in service.children:
-                pass
-
+                child.parents.add(service)
+            for parent in service.parents:
+                parent.children.add(service)
 
 
 class BaseService:
@@ -56,7 +57,7 @@ class BaseService:
         self._hash = hash(Manager.service_hash(
             service_name, *service_args, **service_kwargs
         ))
-        self.init_service(service_name, *service_args, **service_kwargs)
+        self.init_service(*service_args, **service_kwargs)
 
     def __hash__(self):
         return self._hash
@@ -68,7 +69,7 @@ class BaseService:
         )
 
     def service(self, name, *args, **kwargs):
-        self.manager.service(name, *args, **kwargs)
+        return self.manager.service(name, *args, **kwargs)
 
     def init_service(self, *args, **kwargs):
         pass
