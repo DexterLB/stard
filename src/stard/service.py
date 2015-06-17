@@ -23,20 +23,20 @@ class Manager:
                            ' in ' + ' '.join(self.config_dirs))
 
     @staticmethod
-    def service_hash(name, *args, **kwargs):
+    def service_id(name, *args, **kwargs):
         return (name, tuple(args), frozenset(kwargs.items()))
 
     def service(self, name, *args, **kwargs):
-        hash = Manager.service_hash(name, *args, **kwargs)
-        if hash not in self.services:
+        id = Manager.service_id(name, *args, **kwargs)
+        if id not in self.services:
             service_module = SourceFileLoader(
                 name, self.find_file(name)
             ).load_module(name)
 
             service = service_module.Service(self, name, args, kwargs)
-            self.services[hash] = service
+            self.services[id] = service
 
-        return self.services[hash]
+        return self.services[id]
 
     def populate_relatives(self):
         for _, service in self.services.items():
@@ -55,7 +55,7 @@ class BaseService:
         self.service_name = service_name
         self.service_args = service_args
         self.service_kwargs = service_kwargs
-        self._hash = hash(Manager.service_hash(
+        self._hash = hash(Manager.service_id(
             service_name, *service_args, **service_kwargs
         ))
         self.init_service(*service_args, **service_kwargs)
