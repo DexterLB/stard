@@ -1,27 +1,32 @@
+from algorithms import walk_parents, walk_children
 
-class Queue:
-    def __init__(self, services=set()):
-        self.update(services)
+class ServiceQueue:
+    def __init__(self, service, mode)
+        self.mode = mode
 
-    def update(self, services)
-        self.running = set()
-        self.stopped = set()
+        self.to_do = set()
+        self.current = set()
+        self.done = set()
 
-        self.starting = set()
-        self.stopping = set()
+        if mode == 'start':
+            for service in walk_parents(service):
+                if service.is_running():
+                    self.done.add(service)
+                else:
+                    self.to_do.add(service)
+        elif mode == 'stop':
+            for service in walk_children(service):
+                if service.is_running():
+                    self.to_do.add(service)
+                else:
+                    self.done.add(service)
 
-        for service in services:
-            if service.is_running():
-                self.running.add(service)
-            else:
-                self.stopped.add(service)
-
-    def mark_starting(self, service):
-        self.stopping.remove(service)
-        self.starting.add(service)
-
-    def get_startable(self):
-        for service in self.stopped:
-            if service.parents < self.running:
-                self.mark_starting(service)
-                return service
+    def pop(self):
+        if mode == 'start':
+            for service in self.to_do:
+                if service.parents < self.done:
+                    return service
+        elif mode == 'start':
+            for service in self.to_do:
+                if service.children < self.done:
+                    return service
