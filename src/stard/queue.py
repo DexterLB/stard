@@ -21,7 +21,7 @@ class ServiceQueue:
                 else:
                     self.done.add(service)
 
-    def pop(self):
+    def top(self):
         if mode == 'start':
             for service in self.to_do:
                 if service.parents < self.done:
@@ -30,3 +30,12 @@ class ServiceQueue:
             for service in self.to_do:
                 if service.children < self.done:
                     return service
+
+    def pop(self):
+        top = self.top()
+        self.to_do.remove(top)
+        self.current.add(top)
+
+    def finalize(self, service):
+        self.current.remove(service)
+        self.done.add(service)
