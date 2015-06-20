@@ -74,3 +74,7 @@ class BaseService:
 
     def init_service(self, *args, **kwargs):
         pass
+
+    @property
+    def is_running(self):
+        return False
