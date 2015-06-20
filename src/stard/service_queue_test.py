@@ -40,5 +40,17 @@ class TestServiceQueue(unittest.TestCase):
         queue = ServiceQueue(services[3], 'start')
         self.assertIs(queue.top(), services[1])
 
+    def test_top_stop(self):
+        services = self.make_graph({
+            1: [2, 3],
+            2: [3],
+            3: []
+        })
+        for service in services.values():
+            service.is_running = True
+
+        queue = ServiceQueue(services[1], 'stop')
+        self.assertIs(queue.top(), services[3])
+
 if __name__ == '__main__':
     unittest.main()
