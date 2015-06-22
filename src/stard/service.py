@@ -3,7 +3,7 @@ import xdg.BaseDirectory
 import os
 
 
-class Manager:
+class Loader:
     def __init__(self, config_dirs=[]):
         config_base_dirs = xdg.BaseDirectory.xdg_config_dirs + ['/etc']
         self.config_dirs = config_dirs + list(map(
@@ -27,7 +27,7 @@ class Manager:
         return (name, tuple(args), frozenset(kwargs.items()))
 
     def service(self, name, *args, **kwargs):
-        id = Manager.service_id(name, *args, **kwargs)
+        id = Loader.service_id(name, *args, **kwargs)
         if id not in self.services:
             service_module = SourceFileLoader(
                 name, self.find_file(name)
@@ -50,12 +50,12 @@ class BaseService:
     children = set()
     parents = set()
 
-    def __init__(self, manager, service_name, service_args, service_kwargs):
-        self.manager = manager
+    def __init__(self, loader, service_name, service_args, service_kwargs):
+        self.loader = loader
         self.service_name = service_name
         self.service_args = service_args
         self.service_kwargs = service_kwargs
-        self._hash = hash(Manager.service_id(
+        self._hash = hash(Loader.service_id(
             service_name, *service_args, **service_kwargs
         ))
         self.init_service(*service_args, **service_kwargs)
@@ -70,7 +70,7 @@ class BaseService:
         )
 
     def service(self, name, *args, **kwargs):
-        return self.manager.service(name, *args, **kwargs)
+        return self.loader.service(name, *args, **kwargs)
 
     def init_service(self, *args, **kwargs):
         pass
