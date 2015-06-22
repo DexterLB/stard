@@ -35,6 +35,7 @@ class ServiceQueue:
         top = self.top()
         self.to_do.remove(top)
         self.current.add(top)
+        return top
 
     def finalize(self, service):
         self.current.remove(service)

@@ -27,30 +27,82 @@ class TestServiceQueue(unittest.TestCase):
                 vertices[child_name].parents.add(vertices[parent_name])
 
         return vertices
-    
-    def test_top_start(self):
-        services = self.make_graph({
+
+    def setUp(self):
+        self.services = self.make_graph({
             1: [2, 3],
             2: [3],
             3: []
         })
-        for service in services.values():
+
+    def test_top_start(self):
+        for service in self.services.values():
             service.is_running = False
 
-        queue = ServiceQueue(services[3], 'start')
-        self.assertIs(queue.top(), services[1])
+        queue = ServiceQueue(self.services[3], 'start')
+        self.assertIs(queue.top(), self.services[1])
 
     def test_top_stop(self):
-        services = self.make_graph({
-            1: [2, 3],
-            2: [3],
-            3: []
-        })
-        for service in services.values():
+        for service in self.services.values():
             service.is_running = True
 
-        queue = ServiceQueue(services[1], 'stop')
-        self.assertIs(queue.top(), services[3])
+        queue = ServiceQueue(self.services[1], 'stop')
+        self.assertIs(queue.top(), self.services[3])
+
+    def test_to_do_start(self):
+        self.services[1].is_running = True
+        self.services[2].is_running = False
+        self.services[3].is_running = True
+
+        queue = ServiceQueue(self.services[3], 'start')
+
+        self.assertEqual(queue.to_do, {self.services[2]})
+        self.assertEqual(queue.done, {self.services[1], self.services[3]})
+
+    def test_to_do_stop(self):
+        self.services[1].is_running = True
+        self.services[2].is_running = False
+        self.services[3].is_running = True
+
+        queue = ServiceQueue(self.services[1], 'stop')
+
+        self.assertEqual(queue.done, {self.services[2]})
+        self.assertEqual(queue.to_do, {self.services[1], self.services[3]})
+
+    def test_pop_finalize_start(self):
+        for service in self.services.values():
+            service.is_running = False
+
+        queue = ServiceQueue(self.services[3], 'start')
+
+        self.assertIs(queue.pop(), self.services[1])
+        self.assertEqual(queue.current, {self.services[1]})
+        self.assertEqual(queue.to_do, {self.services[3], self.services[2]})
+        self.assertEqual(queue.done, set())
+
+        queue.finalize(self.services[1])
+
+        self.assertEqual(queue.current, set())
+        self.assertEqual(queue.to_do, {self.services[3], self.services[2]})
+        self.assertEqual(queue.done, {self.services[1]})
+
+    def test_pop_finalize_stop(self):
+        for service in self.services.values():
+            service.is_running = True
+
+        queue = ServiceQueue(self.services[1], 'stop')
+
+        self.assertIs(queue.pop(), self.services[3])
+        self.assertEqual(queue.current, {self.services[3]})
+        self.assertEqual(queue.to_do, {self.services[1], self.services[2]})
+        self.assertEqual(queue.done, set())
+
+        queue.finalize(self.services[3])
+
+        self.assertEqual(queue.current, set())
+        self.assertEqual(queue.to_do, {self.services[1], self.services[2]})
+        self.assertEqual(queue.done, {self.services[3]})
+
 
 if __name__ == '__main__':
     unittest.main()
