@@ -1,6 +1,9 @@
 from importlib.machinery import SourceFileLoader
+from importlib import import_module
 import xdg.BaseDirectory
 import os
+
+import stard.builtin_services
 
 class Loader:
     def __init__(self, config_dirs=[]):
@@ -28,9 +31,15 @@ class Loader:
     def service(self, name, *args, **kwargs):
         id = Loader.service_id(name, *args, **kwargs)
         if id not in self.services:
-            service_module = SourceFileLoader(
-                name, self.find_file(name)
-            ).load_module(name)
+            try:
+                service_module = import_module(
+                    '.' + name, # fixme: not elegant enough
+                    'stard.builtin_services'
+                )
+            except ImportError:
+                service_module = SourceFileLoader(
+                    name, self.find_file(name)
+                ).load_module(name)
 
             service = service_module.Service(self, name, args, kwargs)
             self.services[id] = service
