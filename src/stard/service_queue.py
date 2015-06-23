@@ -1,4 +1,4 @@
-from algorithms import walk_parents, walk_children
+from stard.algorithms import walk_parents, walk_children
 
 class ServiceQueue:
     def __init__(self, service, mode):

@@ -2,8 +2,8 @@ import unittest
 import os
 import inspect
 
-from service import Loader
-from test_samples import empty
+from stard.service import Loader
+from .test_samples import empty
 
 class TestLoader(unittest.TestCase):
     def assertSameClass(self, a, b):

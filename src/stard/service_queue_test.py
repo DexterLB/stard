@@ -1,5 +1,5 @@
 import unittest
-from service_queue import ServiceQueue
+from stard.service_queue import ServiceQueue
 
 class Vertex:
     def __init__(self, name=None):

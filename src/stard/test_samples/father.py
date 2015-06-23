@@ -1,4 +1,4 @@
-from service import BaseService
+from stard.service import BaseService
 
 class Service(BaseService):
     def init_service(self):
