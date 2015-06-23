@@ -33,8 +33,9 @@ class ServiceQueue:
 
     def pop(self):
         top = self.top()
-        self.to_do.remove(top)
-        self.current.add(top)
+        if top:
+            self.to_do.remove(top)
+            self.current.add(top)
         return top
 
     def finalize(self, service):
