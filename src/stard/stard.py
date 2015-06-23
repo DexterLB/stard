@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from stard.service import Loader
+from stard.loader import Loader
 from stard.service_queue import ServiceQueue
 from stard.manager import Manager
 

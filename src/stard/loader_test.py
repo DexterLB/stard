@@ -2,7 +2,7 @@ import unittest
 import os
 import inspect
 
-from stard.service import Loader
+from stard.loader import Loader
 from .test_samples import empty
 
 class TestLoader(unittest.TestCase):
