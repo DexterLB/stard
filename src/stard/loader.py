@@ -1,11 +1,14 @@
 from importlib.machinery import SourceFileLoader
-from importlib import import_module
 import xdg.BaseDirectory
 import os
 
-import stard.builtin_services
+from stard import services
 
 class Loader:
+    builtin_services = {
+        'executable': services.Executable
+    }
+
     def __init__(self, config_dirs=[]):
         config_base_dirs = xdg.BaseDirectory.xdg_config_dirs + ['/etc']
         self.config_dirs = config_dirs + list(map(
@@ -24,24 +27,18 @@ class Loader:
         raise RuntimeError('cannot locate service ' + name +
                            ' in ' + ' '.join(self.config_dirs))
 
-    @staticmethod
-    def service_id(name, *args, **kwargs):
-        return (name, tuple(args), frozenset(kwargs.items()))
-
     def service(self, name, *args, **kwargs):
-        id = Loader.service_id(name, *args, **kwargs)
+        id = services.BaseService.service_id(name, *args, **kwargs)
         if id not in self.services:
-            try:
-                service_module = import_module(
-                    '.' + name, # fixme: not elegant enough
-                    'stard.builtin_services'
-                )
-            except ImportError:
+            if name in self.builtin_services:
+                service_class = self.builtin_services[name]
+            else:
                 service_module = SourceFileLoader(
                     name, self.find_file(name)
                 ).load_module(name)
+                service_class = service_module.Service
 
-            service = service_module.Service(self, name, args, kwargs)
+            service = service_class(self, name, args, kwargs)
             self.services[id] = service
 
         return self.services[id]

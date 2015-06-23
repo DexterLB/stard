@@ -1,15 +1,17 @@
-from stard.loader import Loader
-
 class BaseService:
     children = set()
     parents = set()
+
+    @staticmethod
+    def service_id(name, *args, **kwargs):
+        return (name, tuple(args), frozenset(kwargs.items()))
 
     def __init__(self, loader, service_name, service_args, service_kwargs):
         self.loader = loader
         self.service_name = service_name
         self.service_args = service_args
         self.service_kwargs = service_kwargs
-        self._hash = hash(Loader.service_id(
+        self._hash = hash(BaseService.service_id(
             service_name, *service_args, **service_kwargs
         ))
         self.init_service(*service_args, **service_kwargs)
@@ -32,3 +34,6 @@ class BaseService:
     @property
     def is_running(self):
         return False
+
+class Executable(BaseService):
+    pass
