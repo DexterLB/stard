@@ -28,5 +28,8 @@ class Stard:
         manager = Manager(queue)
         manager()
 
-if __name__ == '__main__':
+def main():
     Stard().run()
+
+if __name__ == '__main__':
+    main()
