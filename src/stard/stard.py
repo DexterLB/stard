@@ -8,7 +8,7 @@ class Stard:
         self.parser = ArgumentParser(description='start or stop services')
         self.parser.add_argument(
             '-d', '--dir', type=str, dest='service_dir',
-            default='/etc/stard',
+            default=None,
             help='directory in which to look for service files'
         )
         self.parser.add_argument(
@@ -20,16 +20,29 @@ class Stard:
             help='name of a service'
         )
 
-    def run(self):
-        args = self.parser.parse_args()
-
-        loader = Loader([args.service_dir])
-        queue = ServiceQueue(loader.service(args.service), mode=args.mode)
+    def run(self, service_name, service_mode, service_dir=None):
+        if service_dir:
+            loader = Loader([service_dir])
+        else:
+            loader = Loader()
+        queue = ServiceQueue(loader.service(service_name), mode=service_mode)
         manager = Manager(queue)
         manager()
 
+    def run_from_args(self):
+        args = self.parser.parse_args()
+        self.run(args.service, args.mode, args.service_dir)
+
+
+    def run_from_init(self):
+        self.run('init', 'start')
+
+
 def main():
-    Stard().run()
+    Stard().run_from_args()
+
+def init():
+    Stard().run_from_init()
 
 if __name__ == '__main__':
     main()
