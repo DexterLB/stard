@@ -1,3 +1,5 @@
+import subprocess
+
 class BaseService:
     children = set()
     parents = set()
@@ -36,4 +38,47 @@ class BaseService:
         return False
 
 class Executable(BaseService):
-    pass
+    pidfile = None
+    forking = False
+    arguments = []
+
+    def execute(self, argv):
+        subprocess.check_call(argv)
+
+    def fork(self, argv):
+        return subprocess.Popen(argv)
+
+    def start(self):
+        if self.forking:
+            self.fork([self.executable] + self.arguments)
+        else:
+            self.execute([self.executable] + self.arguments)
+    
+    def pid(self):
+        with open('/dev/null', 'w') as devnull:
+            if self.pidfile:
+                try:
+                    with open(self.pidfile, 'r') as f:
+                        pid = int(f.read())
+                    if subprocess.call(
+                        ['kill', '-0', str(pid)],
+                        stdout=devnull,
+                        stderr=devnull
+                    ) == 0:
+                        return pid
+                    else:
+                        return None
+
+                except IOError:
+                    return None
+            else:
+                try:
+                    return int(subprocess.check_output(
+                        ['pidof', str(self.executable)],
+                        stderr=devnull
+                    ).split()[0])
+                except subprocess.CalledProcessError:
+                    return None
+        
+    def is_running(self):
+        return bool(self.pid())
