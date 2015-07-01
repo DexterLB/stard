@@ -1,4 +1,6 @@
 import subprocess
+import os
+import signal
 
 class BaseService:
     children = set()
@@ -38,47 +40,75 @@ class BaseService:
         return False
 
 class Executable(BaseService):
+    executable = None
+    start_executable = None
+    stop_executable = None
     pidfile = None
-    forking = False
-    arguments = []
+
+    def init_service(self, executable=None,
+                     start_executable=None, stop_executable=None,
+                     pidfile=None):
+        self.executable = executable or self.executable
+        self.start_executable = start_executable or self.start_executable
+        self.stop_executable = stop_executable or self.stop_executable
+        self.pidfile = pidfile or self.pidfile
 
     def execute(self, argv):
         subprocess.check_call(argv)
 
     def fork(self, argv):
-        return subprocess.Popen(argv)
+        return subprocess.Popen(argv).pid
 
     def start(self):
-        if self.forking:
-            self.fork([self.executable] + self.arguments)
+        if self.start_executable:
+            self.execute(self.start_executable)
         else:
-            self.execute([self.executable] + self.arguments)
-    
-    def pid(self):
-        with open('/dev/null', 'w') as devnull:
+            pid = self.fork(self.executable)
             if self.pidfile:
-                try:
-                    with open(self.pidfile, 'r') as f:
-                        pid = int(f.read())
-                    if subprocess.call(
-                        ['kill', '-0', str(pid)],
-                        stdout=devnull,
-                        stderr=devnull
-                    ) == 0:
-                        return pid
-                    else:
-                        return None
+                with open(self.pidfile, 'w') as f:
+                    f.write(str(pid) + "\n")
+   
+    def process_name(self):
+        if self.executable:
+            return self.executable[0]
+        else:
+            return self.start_executable[0]
 
-                except IOError:
-                    return None
-            else:
+    def pid(self):
+        if self.pidfile:
+            try:
+                with open(self.pidfile, 'r') as f:
+                    pid = int(f.read())
                 try:
+                    os.kill(pid, 0)
+                except ProcessLookupError:
+                    return None
+                else:
+                    return pid
+
+            except IOError:
+                return None
+        else:
+            try:
+                with open('/dev/null', 'w') as devnull:
                     return int(subprocess.check_output(
-                        ['pidof', str(self.executable)],
+                        ['pidof', str(self.process_name())],
                         stderr=devnull
                     ).split()[0])
-                except subprocess.CalledProcessError:
-                    return None
+            except subprocess.CalledProcessError:
+                return None
         
     def is_running(self):
         return bool(self.pid())
+
+    def stop(self):
+        if self.stop_executable:
+            self.execute(self.stop_executable)
+        else:
+            pid = self.pid()
+            if not pid:
+                return
+
+            os.kill(pid, 15)    # 15 = TERM
+
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)   # ignore zombie children
