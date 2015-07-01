@@ -111,4 +111,28 @@ class Executable(BaseService):
 
             os.kill(pid, 15)    # 15 = TERM
 
-    signal.signal(signal.SIGCHLD, signal.SIG_IGN)   # ignore zombie children
+    # signal.signal(signal.SIGCHLD, signal.SIG_IGN)   # ignore zombie children
+
+class Mount(Executable):
+    def init_service(self, source=None, mountpoint=None, options=None, fstype=None):
+        self.source = source
+        self.mountpoint = mountpoint
+
+        self.start_executable = ['mount']
+        self.stop_executable = ['umount']
+
+        if fstype:
+            self.start_executable += ['-t', fstype]
+        if options:
+            self.start_executable += ['-o', options]
+
+        if source:
+            self.start_executable += [source]
+        if mountpoint:
+            self.start_executable += [mountpoint]
+            self.stop_executable += [mountpoint]
+        else:
+            raise RuntimeError("can't mount without mountpoint")
+
+    def is_running(self):
+        return (subprocess.call(['mountpoint', '-q', self.mountpoint]) == 0)
