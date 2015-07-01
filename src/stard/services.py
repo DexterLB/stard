@@ -1,6 +1,7 @@
 import subprocess
 import os
-import signal
+import sys
+import traceback
 
 class BaseService:
     children = set()
@@ -56,17 +57,30 @@ class Executable(BaseService):
     def execute(self, argv):
         subprocess.check_call(argv)
 
-    def fork(self, argv):
-        return subprocess.Popen(argv).pid
+    def fork(self, argv, pidfile):
+        child_pid = os.fork()
+        if child_pid == 0:
+            try:
+                service_pid = subprocess.Popen(argv).pid
+                if pidfile:
+                    with open(pidfile, 'w') as f:
+                        f.write(str(service_pid) + "\n")
+            except Exception as exception:
+                traceback.print_exc()
+                sys.exit(1)
+            else:
+                sys.exit(0)
+        else:
+            status = os.waitpid(child_pid, 0)[1]
+            if status != 0:
+                raise RuntimeError('forking failed')
+
 
     def start(self):
         if self.start_executable:
             self.execute(self.start_executable)
         else:
-            pid = self.fork(self.executable)
-            if self.pidfile:
-                with open(self.pidfile, 'w') as f:
-                    f.write(str(pid) + "\n")
+            self.fork(self.executable, self.pidfile)
    
     def process_name(self):
         if self.executable:
@@ -110,8 +124,6 @@ class Executable(BaseService):
                 return
 
             os.kill(pid, 15)    # 15 = TERM
-
-    # signal.signal(signal.SIGCHLD, signal.SIG_IGN)   # ignore zombie children
 
 class Mount(Executable):
     def init_service(self, source=None, mountpoint=None, options=None, fstype=None):
