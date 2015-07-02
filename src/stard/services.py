@@ -2,6 +2,7 @@ import subprocess
 import os
 import sys
 import traceback
+import pickle
 
 class BaseService:
     children = set()
@@ -16,10 +17,14 @@ class BaseService:
         self.service_name = service_name
         self.service_args = service_args
         self.service_kwargs = service_kwargs
-        self._hash = hash(BaseService.service_id(
-            service_name, *service_args, **service_kwargs
-        ))
+        self._hash = hash(self.id)
         self.init_service(*service_args, **service_kwargs)
+
+    @property
+    def id(self):
+        return BaseService.service_id(
+            self.service_name, *self.service_args, **self.service_kwargs
+        )
 
     def __hash__(self):
         return self._hash
@@ -126,9 +131,11 @@ class Executable(BaseService):
             os.kill(pid, 15)    # 15 = TERM
 
 class Mount(Executable):
-    def init_service(self, source=None, mountpoint=None, options=None, fstype=None):
+    def init_service(self, source=None, mountpoint=None,
+                     options=None, fstype=None, mkdir=False):
         self.source = source
         self.mountpoint = mountpoint
+        self.mkdir = mkdir
 
         self.start_executable = ['mount']
         self.stop_executable = ['umount']
@@ -146,5 +153,51 @@ class Mount(Executable):
         else:
             raise RuntimeError("can't mount without mountpoint")
 
+    def start(self):
+        if self.mkdir:
+            os.makedirs(self.mountpoint, exist_ok=True)
+        Executable.start(self)
+
     def is_running(self):
         return (subprocess.call(['mountpoint', '-q', self.mountpoint]) == 0)
+
+class Oneshot:
+    service_file = '/var/run/stard/running.services'
+
+    @classmethod
+    def mark_running_services(cls, services, trunc=False):
+        os.makedirs(os.path.dirname(cls.service_file), exist_ok=True)
+
+        with open(cls.service_file, 'wb' if trunc else 'ab') as f:
+            for service in services:
+                pickle.dump(service, f)
+
+    @classmethod
+    def mark_running(cls, service):
+        cls.mark_running_services({service})
+
+    @classmethod
+    def unmark_running_services(cls, services):
+        running_services = set()
+        with open(cls.service_file, 'rb') as f:
+            while True:
+                try:
+                    running_services.add(pickle.load(f))
+                except (EOFError, pickle.UnpicklingError):
+                    break
+        cls.mark_running_services(running_services - services, trunc=True)
+
+    @classmethod
+    def unmark_running(cls, service):
+        cls.unmark_running_services({service})
+
+
+    @classmethod
+    def is_running(cls, service):
+        try:
+            with open(cls.service_file, 'rb') as f:
+                while True:
+                    if service == pickle.load(f):
+                        return True
+        except (FileNotFoundError, EOFError, pickle.UnpicklingError):
+            return False    
