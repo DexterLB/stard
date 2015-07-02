@@ -65,6 +65,8 @@ setup(
                 'etc/stard/udev.py',
                 'etc/stard/loopback.py',
                 'etc/stard/filesystems.py',
+                'etc/stard/multiuser.py',
+                'etc/stard/getty.py'
             ]
         )
     ],
