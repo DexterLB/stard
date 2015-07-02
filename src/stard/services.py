@@ -46,10 +46,10 @@ class BaseService:
     def init_service(self, *args, **kwargs):
         pass
 
-    def start():
+    def start(self):
         pass
 
-    def stop():
+    def stop(self):
         pass
 
     def add_child(self, name, *args, **kwargs):
@@ -115,7 +115,7 @@ class Executable(BaseService):
         else:
             status = os.waitpid(child_pid, 0)[1]
             if status != 0:
-                raise RuntimeError('forking failed')
+                raise RuntimeError('forking failed for ' + str(argv))
 
 
     def start(self):
