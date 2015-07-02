@@ -6,7 +6,9 @@ from stard import services
 
 class Loader:
     builtin_services = {
-        'executable': services.Executable
+        'executable': services.Executable,
+        'mount': services.Mount,
+        'copy': services.Copy
     }
 
     def __init__(self, config_dirs=[]):

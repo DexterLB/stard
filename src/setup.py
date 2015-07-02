@@ -55,7 +55,15 @@ setup(
     },
 
     data_files = [
-        ('/etc/stard', ['etc/stard/init.py'])
+        (
+            '/etc/stard',
+            [
+                'etc/stard/init.py',
+                'etc/stard/base.py',
+                'etc/stard/system_mountpoints.py',
+                'etc/stard/set_hostname.py',
+            ]
+        )
     ],
 
     entry_points={

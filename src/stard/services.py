@@ -6,9 +6,6 @@ import traceback
 from stard.util import Oneshot
 
 class BaseService:
-    children = set()
-    parents = set()
-
     @staticmethod
     def service_id(name, *args, **kwargs):
         return (name, tuple(args), frozenset(kwargs.items()))
@@ -19,6 +16,13 @@ class BaseService:
         self.service_args = service_args
         self.service_kwargs = service_kwargs
         self._hash = hash(self.id)
+
+        self.children = set()
+        self.parents = set()
+
+        if service_name != 'base':
+            self.add_parent('base')
+
         self.init_service(*service_args, **service_kwargs)
 
     @property
@@ -42,9 +46,24 @@ class BaseService:
     def init_service(self, *args, **kwargs):
         pass
 
+    def start():
+        pass
+
+    def stop():
+        pass
+
+    def add_child(self, name, *args, **kwargs):
+        self.children.add(self.service(name, *args, **kwargs))
+
+    def add_parent(self, name, *args, **kwargs):
+        self.parents.add(self.service(name, *args, **kwargs))
+
     @property
     def is_running(self):
-        return False
+        for parent in self.parents:
+            if not parent.is_running:
+                return False
+        return True
 
 class Executable(BaseService):
     executable = None
@@ -121,7 +140,8 @@ class Executable(BaseService):
                     ).split()[0])
             except subprocess.CalledProcessError:
                 return None
-        
+       
+    @property
     def is_running(self):
         if self.oneshot:
             return Oneshot.is_running(self.id)
@@ -166,5 +186,28 @@ class Mount(Executable):
             os.makedirs(self.mountpoint, exist_ok=True)
         Executable.start(self)
 
+    @property
     def is_running(self):
         return (subprocess.call(['mountpoint', '-q', self.mountpoint]) == 0)
+
+class Copy(BaseService):
+    append = False
+
+    def init_service(self, source=None, destination=None, append=False):
+        self.source = source = source or self.source
+        self.destination = destination or self.destination
+        self.append = append or self.append
+
+    def start(self):
+        with open(self.source, 'rb') as input:
+            write_mode = 'ab' if self.append else 'wb'
+            with open(self.destination, write_mode) as output:
+                output.write(input.read())
+        Oneshot.mark_running(self.id)
+
+    def stop(self):
+        Oneshot.unmark_running(self.id)
+
+    @property
+    def is_running(self):
+        return Oneshot.is_running(self.id)

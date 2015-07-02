@@ -9,8 +9,10 @@ class Manager:
 
         if self.queue.mode == 'start':
             service.start()
+            print('started ' + service.service_name)
         elif self.queue.mode == 'stop':
             service.stop()
+            print('stopped ' + service.service_name)
         else:
             raise RuntimeError('service mode must be "start" or "stop"')
 
