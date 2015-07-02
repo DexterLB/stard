@@ -2,7 +2,8 @@ import subprocess
 import os
 import sys
 import traceback
-import pickle
+
+from stard.util import Oneshot
 
 class BaseService:
     children = set()
@@ -50,23 +51,25 @@ class Executable(BaseService):
     start_executable = None
     stop_executable = None
     pidfile = None
+    oneshot = False
 
     def init_service(self, executable=None,
                      start_executable=None, stop_executable=None,
-                     pidfile=None):
+                     pidfile=None, oneshot = False):
         self.executable = executable or self.executable
         self.start_executable = start_executable or self.start_executable
         self.stop_executable = stop_executable or self.stop_executable
         self.pidfile = pidfile or self.pidfile
+        self.oneshot = oneshot or self.oneshot
 
     def execute(self, argv):
-        subprocess.check_call(argv)
+        subprocess.check_call(list(argv))
 
     def fork(self, argv, pidfile):
         child_pid = os.fork()
         if child_pid == 0:
             try:
-                service_pid = subprocess.Popen(argv).pid
+                service_pid = subprocess.Popen(list(argv)).pid
                 if pidfile:
                     with open(pidfile, 'w') as f:
                         f.write(str(service_pid) + "\n")
@@ -86,6 +89,8 @@ class Executable(BaseService):
             self.execute(self.start_executable)
         else:
             self.fork(self.executable, self.pidfile)
+        if self.oneshot:
+            Oneshot.mark_running(self.id)
    
     def process_name(self):
         if self.executable:
@@ -118,17 +123,20 @@ class Executable(BaseService):
                 return None
         
     def is_running(self):
+        if self.oneshot:
+            return Oneshot.is_running(self.id)
         return bool(self.pid())
 
     def stop(self):
         if self.stop_executable:
             self.execute(self.stop_executable)
         else:
-            pid = self.pid()
-            if not pid:
-                return
-
-            os.kill(pid, 15)    # 15 = TERM
+            if not self.oneshot:
+                pid = self.pid()
+                if pid:
+                    os.kill(pid, 15)    # 15 = TERM
+        if self.oneshot:
+            Oneshot.unmark_running(self.id)
 
 class Mount(Executable):
     def init_service(self, source=None, mountpoint=None,
@@ -160,44 +168,3 @@ class Mount(Executable):
 
     def is_running(self):
         return (subprocess.call(['mountpoint', '-q', self.mountpoint]) == 0)
-
-class Oneshot:
-    service_file = '/var/run/stard/running.services'
-
-    @classmethod
-    def mark_running_services(cls, services, trunc=False):
-        os.makedirs(os.path.dirname(cls.service_file), exist_ok=True)
-
-        with open(cls.service_file, 'wb' if trunc else 'ab') as f:
-            for service in services:
-                pickle.dump(service, f)
-
-    @classmethod
-    def mark_running(cls, service):
-        cls.mark_running_services({service})
-
-    @classmethod
-    def unmark_running_services(cls, services):
-        running_services = set()
-        with open(cls.service_file, 'rb') as f:
-            while True:
-                try:
-                    running_services.add(pickle.load(f))
-                except (EOFError, pickle.UnpicklingError):
-                    break
-        cls.mark_running_services(running_services - services, trunc=True)
-
-    @classmethod
-    def unmark_running(cls, service):
-        cls.unmark_running_services({service})
-
-
-    @classmethod
-    def is_running(cls, service):
-        try:
-            with open(cls.service_file, 'rb') as f:
-                while True:
-                    if service == pickle.load(f):
-                        return True
-        except (FileNotFoundError, EOFError, pickle.UnpicklingError):
-            return False    
