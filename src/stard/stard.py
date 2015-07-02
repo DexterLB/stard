@@ -12,8 +12,8 @@ class Stard:
             help='directory in which to look for service files'
         )
         self.parser.add_argument(
-            'mode', choices=['start', 'stop'],
-            help='choose whether to start or stop a service'
+            'mode', choices=['start', 'stop', 'status'],
+            help='choose what to do with a service'
         )
         self.parser.add_argument(
             'service', type=str,
@@ -25,9 +25,13 @@ class Stard:
             loader = Loader([service_dir])
         else:
             loader = Loader()
-        queue = ServiceQueue(loader.service(service_name), mode=service_mode)
-        manager = Manager(queue)
-        manager()
+
+        if service_mode == 'status':
+            print('running: ' + str(loader.service(service_name).is_running))
+        else:
+            queue = ServiceQueue(loader.service(service_name), mode=service_mode)
+            manager = Manager(queue)
+            manager()
 
     def run_from_args(self):
         args = self.parser.parse_args()

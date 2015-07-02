@@ -66,23 +66,38 @@ class BaseService:
         return True
 
 class Executable(BaseService):
-    executable = None
-    start_executable = None
-    stop_executable = None
+    command = None
+    start_command = None
+    pre_start_commands = None
+    post_start_commands = None
+    pre_stop_commands = None
+    post_stop_commands = None
+    stop_command = None
     pidfile = None
     oneshot = False
 
-    def init_service(self, executable=None,
-                     start_executable=None, stop_executable=None,
-                     pidfile=None, oneshot = False):
-        self.executable = executable or self.executable
-        self.start_executable = start_executable or self.start_executable
-        self.stop_executable = stop_executable or self.stop_executable
+    def init_service(self, command=None,
+                     start_command=None, stop_command=None,
+                     pre_start_commands=None, post_start_commands=None,
+                     pre_stop_commands=None, post_stop_commands=None,
+                     pidfile=None, oneshot=False):
+        self.command = command or self.command
+        self.start_command = start_command or self.start_command
+        self.pre_start_commands = pre_start_commands or self.pre_start_commands
+        self.post_start_commands = post_start_commands or self.post_start_commands
+        self.pre_stop_commands = pre_stop_commands or self.pre_stop_commands
+        self.post_stop_commands = post_stop_commands or self.post_stop_commands
+        self.stop_command = stop_command or self.stop_command
         self.pidfile = pidfile or self.pidfile
         self.oneshot = oneshot or self.oneshot
 
     def execute(self, argv):
         subprocess.check_call(list(argv))
+
+    def execute_commands(self, commands):
+        if commands:
+            for command in commands:
+                self.execute(command)
 
     def fork(self, argv, pidfile):
         child_pid = os.fork()
@@ -104,18 +119,22 @@ class Executable(BaseService):
 
 
     def start(self):
-        if self.start_executable:
-            self.execute(self.start_executable)
+        self.execute_commands(self.pre_start_commands)
+
+        if self.start_command:
+            self.execute(self.start_command)
         else:
-            self.fork(self.executable, self.pidfile)
+            self.fork(self.command, self.pidfile)
         if self.oneshot:
             Oneshot.mark_running(self.id)
    
+        self.execute_commands(self.post_start_commands)
+
     def process_name(self):
-        if self.executable:
-            return self.executable[0]
+        if self.command:
+            return self.command[0]
         else:
-            return self.start_executable[0]
+            return self.start_command[0]
 
     def pid(self):
         if self.pidfile:
@@ -148,8 +167,10 @@ class Executable(BaseService):
         return bool(self.pid())
 
     def stop(self):
-        if self.stop_executable:
-            self.execute(self.stop_executable)
+        self.execute_commands(self.pre_stop_commands)
+
+        if self.stop_command:
+            self.execute(self.stop_command)
         else:
             if not self.oneshot:
                 pid = self.pid()
@@ -158,6 +179,8 @@ class Executable(BaseService):
         if self.oneshot:
             Oneshot.unmark_running(self.id)
 
+        self.execute_commands(self.pre_start_commands)
+
 class Mount(Executable):
     def init_service(self, source=None, mountpoint=None,
                      options=None, fstype=None, mkdir=False):
@@ -165,19 +188,19 @@ class Mount(Executable):
         self.mountpoint = mountpoint
         self.mkdir = mkdir
 
-        self.start_executable = ['mount']
-        self.stop_executable = ['umount']
+        self.start_command = ['mount']
+        self.stop_command = ['umount']
 
         if fstype:
-            self.start_executable += ['-t', fstype]
+            self.start_command += ['-t', fstype]
         if options:
-            self.start_executable += ['-o', options]
+            self.start_command += ['-o', options]
 
         if source:
-            self.start_executable += [source]
+            self.start_command += [source]
         if mountpoint:
-            self.start_executable += [mountpoint]
-            self.stop_executable += [mountpoint]
+            self.start_command += [mountpoint]
+            self.stop_command += [mountpoint]
         else:
             raise RuntimeError("can't mount without mountpoint")
 

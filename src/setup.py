@@ -62,6 +62,9 @@ setup(
                 'etc/stard/base.py',
                 'etc/stard/system_mountpoints.py',
                 'etc/stard/set_hostname.py',
+                'etc/stard/udev.py',
+                'etc/stard/loopback.py',
+                'etc/stard/filesystems.py',
             ]
         )
     ],
