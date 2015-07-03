@@ -6,7 +6,7 @@ class Service(Executable):
         ('mount', '-o', 'remount,rw', '/'),
     )
 
-    stop_command = ('umount', '-a')
+    stop_command = ('sh', '-c', 'umount -af; true')
     post_stop_commands = (
         ('mount', '-o', 'remount,ro', '/'),
     )

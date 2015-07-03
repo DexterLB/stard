@@ -66,7 +66,8 @@ setup(
                 'etc/stard/loopback.py',
                 'etc/stard/filesystems.py',
                 'etc/stard/multiuser.py',
-                'etc/stard/getty.py'
+                'etc/stard/getty.py',
+                'etc/stard/dhcpcd.py'
             ]
         ),
     ],
@@ -75,6 +76,7 @@ setup(
         'console_scripts': [
             'stard=stard.stard:main',
             'rc.init=stard.stard:init',
+            'rc.shutdown=stard.stard:shutdown'
         ],
     },
 )

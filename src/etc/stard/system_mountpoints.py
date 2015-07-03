@@ -4,27 +4,33 @@ class Service(BaseService):
     def init_service(self):
         self.add_parent(
             'mount', 'proc', '/proc', 
-            fstype='proc', options='nosuid,noexec,nodev'
+            fstype='proc', options='nosuid,noexec,nodev',
+            ignore_status=True
         )
         self.add_parent(
             'mount', 'sys', '/sys', 
-            fstype='sysfs', options='nosuid,noexec,nodev'
+            fstype='sysfs', options='nosuid,noexec,nodev',
+            ignore_status=True
         )
         self.add_parent(
             'mount', 'run', '/run', 
-            fstype='tmpfs', options='mode=0755,nosuid,nodev'
+            fstype='tmpfs', options='mode=0755,nosuid,nodev',
+            ignore_status=True
         )
         self.add_parent(
             'mount', 'dev', '/dev', 
-            fstype='devtmpfs', options='mode=0755,nosuid'
+            fstype='devtmpfs', options='mode=0755,nosuid',
+            ignore_status=True
         )
         self.add_parent(
             'mount', 'devpts', '/dev/pts', 
             fstype='devpts', options='mode=0620,gid=5,nosuid,noexec',
-            mkdir=True
+            mkdir=True,
+            ignore_status=True
         )
         self.add_parent(
             'mount', 'shm', '/dev/shm', 
             fstype='tmpfs', options='mode=1777,nosuid,noexec',
-            mkdir=True
+            mkdir=True,
+            ignore_status=True
         )

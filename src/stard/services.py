@@ -75,12 +75,13 @@ class Executable(BaseService):
     stop_command = None
     pidfile = None
     oneshot = False
+    ignore_status = False
 
     def init_service(self, command=None,
                      start_command=None, stop_command=None,
                      pre_start_commands=None, post_start_commands=None,
                      pre_stop_commands=None, post_stop_commands=None,
-                     pidfile=None, oneshot=False):
+                     pidfile=None, oneshot=False, ignore_status=False):
         self.command = command or self.command
         self.start_command = start_command or self.start_command
         self.pre_start_commands = pre_start_commands or self.pre_start_commands
@@ -90,9 +91,16 @@ class Executable(BaseService):
         self.stop_command = stop_command or self.stop_command
         self.pidfile = pidfile or self.pidfile
         self.oneshot = oneshot or self.oneshot
+        self.ignore_status = ignore_status or self.ignore_status
 
     def execute(self, argv):
-        subprocess.check_output(list(argv), stderr=subprocess.STDOUT)
+        if self.ignore_status:
+            try:
+                subprocess.check_output(list(argv), stderr=subprocess.STDOUT)
+            except:
+                pass
+        else:
+            subprocess.check_output(list(argv), stderr=subprocess.STDOUT)
 
     def execute_commands(self, commands):
         if commands:
@@ -183,10 +191,12 @@ class Executable(BaseService):
 
 class Mount(Executable):
     def init_service(self, source=None, mountpoint=None,
-                     options=None, fstype=None, mkdir=False):
+                     options=None, fstype=None, mkdir=False,
+                     ignore_status=False):
         self.source = source
         self.mountpoint = mountpoint
         self.mkdir = mkdir
+        self.ignore_status = ignore_status
 
         self.start_command = ['mount']
         self.stop_command = ['umount']

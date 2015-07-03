@@ -26,6 +26,9 @@ class Stard:
         else:
             loader = Loader()
 
+        loader.load_services()
+        loader.populate_relatives()
+
         if service_mode == 'status':
             print('running: ' + str(loader.service(service_name).is_running))
         else:
@@ -41,12 +44,18 @@ class Stard:
     def run_from_init(self):
         self.run('init', 'start')
 
+    def run_from_shutdown(self):
+        self.run('base', 'stop')
+
 
 def main():
     Stard().run_from_args()
 
 def init():
     Stard().run_from_init()
+
+def shutdown():
+    Stard().run_from_shutdown()
 
 if __name__ == '__main__':
     main()

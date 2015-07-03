@@ -46,6 +46,9 @@ class Loader:
 
         return self.services[id]
 
+    def load_services(self):
+        self.service('init')    # fixme: do something smarter
+
     def populate_relatives(self):
         for _, service in self.services.items():
             for child in service.children:
