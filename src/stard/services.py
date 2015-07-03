@@ -234,3 +234,29 @@ class Copy(BaseService):
     @property
     def is_running(self):
         return Oneshot.is_running(self.id)
+
+class Module(Executable):
+    module_name = None
+
+    def init_service(self, module_name=None):
+        self.module_name = module_name or self.module_name
+
+    def start(self):
+        subprocess.check_output(
+            ['modprobe', self.module_name],
+            stderr=subprocess.STDOUT
+        )
+
+    @property
+    def is_running(self):
+        mod_list = subprocess.check_output(
+            ['lsmod'], stderr=subprocess.STDOUT
+        ).decode().split("\n")
+        modules = [line.split()[0] for line in mod_list if line]
+        return (self.module_name in modules)
+
+    def stop(self):
+        subprocess.check_output(
+            ['modprobe', '--remove-dependencies', self.module_name],
+            stderr=subprocess.STDOUT
+        )

@@ -8,7 +8,8 @@ class Loader:
     builtin_services = {
         'executable': services.Executable,
         'mount': services.Mount,
-        'copy': services.Copy
+        'copy': services.Copy,
+        'module': services.Module
     }
 
     def __init__(self, config_dirs=[]):

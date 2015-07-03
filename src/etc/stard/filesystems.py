@@ -5,6 +5,12 @@ class Service(Executable):
     post_start_commands = (
         ('mount', '-o', 'remount,rw', '/'),
     )
+
+    stop_command = ('umount', '-a')
+    post_stop_commands = (
+        ('mount', '-o', 'remount,ro', '/'),
+    )
+
     oneshot = True
 
     def init_service(self):
