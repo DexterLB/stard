@@ -92,7 +92,7 @@ class Executable(BaseService):
         self.oneshot = oneshot or self.oneshot
 
     def execute(self, argv):
-        subprocess.check_call(list(argv))
+        subprocess.check_output(list(argv), stderr=subprocess.STDOUT)
 
     def execute_commands(self, commands):
         if commands:

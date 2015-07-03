@@ -1,0 +1,29 @@
+# Maintainer: Angel Angelov <hextwoa@gmail.com>
+
+pkgname=stard
+pkgrel=1
+pkgdesc="InitScripts-like startup system"
+arch=(any)
+url="https://github.com/DexterLB/stard"
+license=('MIT')
+groups=()
+depends=('python' 'python-xdg')
+makedepends=()
+provides=(stard)
+conflicts=(stard)
+replaces=()
+backup=()
+options=(!emptydirs)
+install=
+source=('git://github.com/DexterLB/stard.git')
+md5sums=(SKIP)
+
+pkgver() {
+  cd "$srcdir/$pkgname"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd "$srcdir/$pkgname/src"
+  python setup.py install --root="$pkgdir/" --optimize=1
+}

@@ -44,7 +44,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=[],
+    install_requires=['pyxdg'],
 
     extras_require={
         'dev': [],
@@ -68,7 +68,7 @@ setup(
                 'etc/stard/multiuser.py',
                 'etc/stard/getty.py'
             ]
-        )
+        ),
     ],
 
     entry_points={
